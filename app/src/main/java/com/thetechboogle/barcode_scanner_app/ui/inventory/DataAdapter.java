@@ -1,7 +1,6 @@
 package com.thetechboogle.barcode_scanner_app.ui.inventory;
 
 import android.content.Context;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,6 +40,7 @@ class DataAdapter extends RecyclerView.Adapter<DataAdapter.ProductItemView> {
         ProductData item =  productDataList.get(position);
         holder.setupData(item);
     }
+
 
     @Override
     public int getItemCount() {

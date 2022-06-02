@@ -1,6 +1,8 @@
 package com.thetechboogle.barcode_scanner_app;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -37,36 +39,27 @@ public class MainActivity extends AppCompatActivity implements LifecycleOwner {
         setContentView(binding.getRoot());
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_inventory, R.id.navigation_camera)
-                .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        NavigationUI.setupWithNavController(binding.navView, navController);
 
-        navView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull @NotNull MenuItem item) {
-                Fragment selectedFragment = null;
-                switch(item.getItemId()){
-                    case R.id.fragment_home:
-                        selectedFragment = new HomeFragment();
-                        break;
-                    case R.id.fragment_camera:
-                        selectedFragment = new CameraFragment();
-                        break;
-                    case R.id.fragment_inventory:
-                        selectedFragment = new InventoryFragment();
-                        break;
-                }
-
-                getSupportFragmentManager().beginTransaction().replace(R.id.nav_host_fragment_container, selectedFragment).commit();
-                return true;
+        navView.setOnItemSelectedListener((item) -> {
+            Fragment selectedFragment = null;
+            switch(item.getItemId()){
+                case R.id.navigation_home:
+                    selectedFragment = new HomeFragment();
+                    break;
+                case R.id.navigation_camera:
+                    selectedFragment = new CameraFragment();
+                    break;
+                case R.id.navigation_inventory:
+                    selectedFragment = new InventoryFragment();
+                    break;
             }
+
+            getSupportFragmentManager().beginTransaction().replace(R.id.nav_host_fragment_activity_main, selectedFragment).commit();
+            return true;
         });
 
-        getSupportFragmentManager().beginTransaction().replace(R.id.nav_host_fragment_container, new HomeFragment()).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.nav_host_fragment_activity_main, new HomeFragment()).commit();
     }
-}
+
+};
+
