@@ -208,7 +208,7 @@ public class CameraFragment extends Fragment {
 
                 Log.d("barcode", "var1 = " + var1);
                 Bundle bundle = new Bundle();
-             git   bundle.putString("product",var1);
+                bundle.putString("product",var1);
                 getParentFragmentManager().setFragmentResult("Barcode data", bundle);
                 //getParentFragmentManager().beginTransaction().replace(R.id.navigation_camera, new InventoryFragment()).commit();
 
