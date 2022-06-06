@@ -4,16 +4,21 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.mlkit.vision.barcode.common.Barcode;
+
 public class CameraViewModel extends ViewModel {
 
-    private MutableLiveData<String> mText;
+    private MutableLiveData<Barcode> mBarcodeData;
 
     public CameraViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("Camera Fragment");
+        mBarcodeData = new MutableLiveData<>();
     }
 
-    public LiveData<String> getText() {
-        return mText;
+    public void setBarcodeData(Barcode barcode){
+        mBarcodeData.setValue(barcode);
+    }
+
+    public LiveData<Barcode> getBarcodeData() {
+        return mBarcodeData;
     }
 }

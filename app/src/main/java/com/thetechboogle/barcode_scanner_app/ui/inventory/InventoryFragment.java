@@ -1,6 +1,7 @@
 package com.thetechboogle.barcode_scanner_app.ui.inventory;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.mlkit.vision.barcode.common.Barcode;
 import com.thetechboogle.barcode_scanner_app.databinding.FragmentInventoryBinding;
 
 import java.util.ArrayList;
@@ -28,6 +30,13 @@ public class InventoryFragment extends Fragment {
         inventoryViewModel = new ViewModelProvider(this).get(InventoryViewModel.class);
         binding = FragmentInventoryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+
+        getParentFragmentManager().setFragmentResultListener("barcode data", this, (requestKey, bundle) -> {
+            String result = bundle.getString("product");
+            Log.d("item", "result = " + result);
+
+        });
 
         final RecyclerView recyclerView = binding.ProductItemRecyclerView;
         inventoryViewModel.getProductItemList().observe(getViewLifecycleOwner(), new Observer<ArrayList<ProductData>>() {

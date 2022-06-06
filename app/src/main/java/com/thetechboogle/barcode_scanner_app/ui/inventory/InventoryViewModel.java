@@ -3,9 +3,14 @@ package com.thetechboogle.barcode_scanner_app.ui.inventory;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.thetechboogle.barcode_scanner_app.ui.camera.CameraViewModel;
+
 import java.util.ArrayList;
 
 public class InventoryViewModel extends ViewModel  {
+
 
     private MutableLiveData<ArrayList<ProductData>> mProducts;
     ArrayList<ProductData> productData;
@@ -14,6 +19,8 @@ public class InventoryViewModel extends ViewModel  {
         mProducts = new MutableLiveData<>();
         init();
     }
+
+
 
     public LiveData<ArrayList<ProductData>> getProductItemList() {
         return mProducts;

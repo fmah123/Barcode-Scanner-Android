@@ -3,6 +3,7 @@ package com.thetechboogle.barcode_scanner_app.ui.camera;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -13,12 +14,15 @@ import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
@@ -39,6 +43,9 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 import com.thetechboogle.barcode_scanner_app.R;
+import com.thetechboogle.barcode_scanner_app.databinding.FragmentCameraBinding;
+import com.thetechboogle.barcode_scanner_app.databinding.FragmentHomeBinding;
+import com.thetechboogle.barcode_scanner_app.ui.inventory.InventoryFragment;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -48,18 +55,15 @@ import java.util.concurrent.Executors;
 
 public class CameraFragment extends Fragment {
 
-    private static final String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
-    private static final int CAMERA_REQUEST_CODE = 10;
+    private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
     private CameraViewModel cameraViewModel;
+    private FragmentCameraBinding binding;
     private PreviewView previewCamera;
     private ListenableFuture cameraProviderFuture;
     private ExecutorService cameraExecutor;
+    private ExecutorService cameraExecutor1;
     private ImageAnalyser analyser;
     private Context safeContext;
-    
-    enum access {
-        
-    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -67,23 +71,22 @@ public class CameraFragment extends Fragment {
         safeContext = context;
     }
 
-//    private int getStatusBarHeight(){
-//        int resourceId = safeContext.getResources().getIdentifier("status_bar_height", "dimen", "android");
-//        if(resourceId > 0){
-//            return safeContext.getResources().getDimensionPixelOffset(resourceId);
-//        } else {
-//            return 0;
-//        }
-//    }
-
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle  savedInstanceState) {
         /*This line of code connects the view model to the fragment*/
+
+        binding = FragmentCameraBinding.inflate(inflater, container, false);
+        View root = binding.getRoot();
+
         cameraViewModel = new ViewModelProvider(this).get(CameraViewModel.class);
-        return inflater.inflate(R.layout.fragment_camera, container, false);
+
+        previewCamera = binding.previewView;
+
+
+        return root;
     }
 
     private boolean hasCameraPermissions(){
-        return ContextCompat.checkSelfPermission(safeContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(safeContext, CAMERA_PERMISSION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPermissionLauncher(){
@@ -93,34 +96,32 @@ public class CameraFragment extends Fragment {
                 startCamera();
             }else {
                 Log.d("permission", "Camera permission is allowed to be accessed: " + isGranted);
+                Toast.makeText(safeContext, "Change Permissions to access camera", Toast.LENGTH_SHORT).show();
+
             }
         }).launch(Manifest.permission.CAMERA);
 
     }
 
-
-
     public void startCamera(){
         Log.d("permission", "starting camera");
-//        cameraExecutor = Executors.newSingleThreadExecutor();
-//        cameraProviderFuture = ProcessCameraProvider.getInstance(safeContext);
-//
-//        analyser = new ImageAnalyser(getParentFragmentManager());
-//
-//        cameraProviderFuture.addListener(() -> {
-//            try{
-//                ProcessCameraProvider processCameraProvider = (ProcessCameraProvider) cameraProviderFuture.get();
-//                bindingPreview(processCameraProvider);
-//
-//            } catch (ExecutionException | InterruptedException e){
-//                e.printStackTrace();
-//            }
-//        }, ContextCompat.getMainExecutor(safeContext));
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        cameraProviderFuture = ProcessCameraProvider.getInstance(safeContext);
 
+        analyser = new ImageAnalyser();
+
+        cameraProviderFuture.addListener(() -> {
+            try{
+                ProcessCameraProvider processCameraProvider = (ProcessCameraProvider) cameraProviderFuture.get();
+                bindingPreview(processCameraProvider);
+
+            } catch (ExecutionException | InterruptedException e){
+                e.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(safeContext));
     }
 
     public void takePhoto(){
-
     }
 
     @Override
@@ -135,16 +136,19 @@ public class CameraFragment extends Fragment {
             requestPermissionLauncher();
         }
 
-        Executor cameraExecutor1 = Executors.newSingleThreadExecutor();
+        cameraExecutor1 = Executors.newSingleThreadExecutor();
     }
 
 
-    private void bindingPreview(ProcessCameraProvider processCameraProvider) {
-        Preview preview = new Preview.Builder().build();
 
+    private void bindingPreview(ProcessCameraProvider processCameraProvider) {
+        Log.d("permission", "bindingPreview() Called");
+        Preview preview = new Preview.Builder().build();
+        preview.setSurfaceProvider(cameraExecutor1, previewCamera.getSurfaceProvider());
         CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
         ImageCapture imageCapture = new ImageCapture.Builder().build();
+
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(1280, 720))
@@ -155,31 +159,19 @@ public class CameraFragment extends Fragment {
 
         processCameraProvider.unbindAll();
 
-        preview.setSurfaceProvider(previewCamera.getSurfaceProvider());
-
         processCameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+
     }
 
     public class ImageAnalyser implements ImageAnalysis.Analyzer {
-
-        private FragmentManager fragmentManager;
-
-        public ImageAnalyser(FragmentManager fragmentManager) {
-            this.fragmentManager = fragmentManager;
-        }
-
         @Override
         public void analyze(@NonNull ImageProxy image) {
             scanBarcode(image);
-            image.close();
         }
-
-
-
-
     }
 
     private void scanBarcode(ImageProxy image) {
+        Log.d("permission", "scanBarcode() called");
         @SuppressLint("UnsafeOptInUsageError") Image cameraRoll = image.getImage();
         if(cameraRoll != null){
             InputImage inputImage = InputImage.fromMediaImage(cameraRoll, image.getImageInfo().getRotationDegrees());
@@ -199,6 +191,8 @@ public class CameraFragment extends Fragment {
     }
 
     private void barcodeDataReader(List<Barcode> barcodes) {
+
+        Log.d("permission", "barcodeDataReader() called");
         for (Barcode barcode: barcodes) {
             Rect bounds = barcode.getBoundingBox();
             Point[] corners = barcode.getCornerPoints();
@@ -208,20 +202,18 @@ public class CameraFragment extends Fragment {
             Log.d("barcode", "rawValue = " + rawValue);
             int valueType = barcode.getValueType();
             // See API reference for complete list of supported types
-            switch (valueType) {
-                case Barcode.TYPE_WIFI:
-                    String ssid = barcode.getWifi().getSsid();
-                    String password = barcode.getWifi().getPassword();
-                    int type = barcode.getWifi().getEncryptionType();
-                    break;
-                case Barcode.TYPE_URL:
-                    String title = barcode.getUrl().getTitle();
-                    String url = barcode.getUrl().getUrl();
-                    break;
-                case Barcode.TYPE_PRODUCT:
-                    String var1 = barcode.getDisplayValue();
+            if (valueType == Barcode.TYPE_PRODUCT) {
+                Log.d("barcode", "Inside if statement");
+                String var1 = barcode.getDisplayValue();
 
+                Log.d("barcode", "var1 = " + var1);
+                Bundle bundle = new Bundle();
+             git   bundle.putString("product",var1);
+                getParentFragmentManager().setFragmentResult("Barcode data", bundle);
+                //getParentFragmentManager().beginTransaction().replace(R.id.navigation_camera, new InventoryFragment()).commit();
 
+            } else {
+                Log.d("barcode", "Barcode not read!! Check now");
             }
         }
     }
@@ -230,6 +222,6 @@ public class CameraFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        //binding = null;
+        binding = null;
     }
 }
